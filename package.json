@@ -1,0 +1,14 @@
+{
+  "name": "hovercards-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joaquin Oltra <joaquin@chimeces.com> (http://chimeces.com)",
+  "license": "ISC",
+  "dependencies": {
+    "nightmare": "^2.6.1"
+  }
+}
