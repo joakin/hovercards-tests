@@ -1,460 +1,444 @@
-const Nightmare = require('nightmare');
-
-
-const setup = ({initFromStorage, disabled}) => (n) => 
-  n.evaluate((initFromStorage, disabled) => {
-    window.mw.popups.saveEnabledState( !disabled )
-    window.mw.popups.getEnabledState = function () { return !disabled }
-    window.mw.popups.enabled = !disabled
-    window.log = initFromStorage ? (JSON.parse(localStorage.getItem('log')) || []) : []
-    window.mw.trackSubscribe('event', (schema, e) => {
-      window.log.push([e.action, JSON.stringify(e)])
-      localStorage.setItem('log', JSON.stringify(window.log))
-    })
-  }, initFromStorage, disabled)
-const hover = (link) => (n) => n.mouseover(link)
-const hoverout = (link) => (n) => n.evaluate(mouseout, link)
-const click = (link) => (n) => setup({initFromStorage: true})(n.click(link))
-const waitForHovercard = (n) => n.wait('.mwe-popups').wait(() =>
-  document.querySelector('.mwe-popups').style.display === 'block')
-const visit = (url, opts) => (n) => 
-  setup(opts || {})(n.goto(url))
-const wait = (t) => (n) => n.wait(t || 10)
-const relax = wait(500)
-
-
-
-const staging = 'http://reading-web-staging.wmflabs.org/w/index.php?title=Main_Page&mobileaction=toggle_view_desktop'
-const testLink = 'a[href="/wiki/Test"]'
-const testLink2 = 'a[href="/wiki/Test2"]'
-const hovercard = '.mwe-popups a.mwe-popups-extract, .mwe-popups a.mwe-popups-discreet'
-
-
-/**/
-test('Hover and wait for card', _ => [
-  visit(staging),
-  hover(testLink),
-  waitForHovercard,
-  hoverout(testLink)
-], [
-  'pageLoaded',
-  'dismissed'
-])
-
-test('Quick/accidental hover', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(10),
-  hoverout(testLink)
-], ['pageLoaded'])
-
-test('Longer quick/accidental hover', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(350),
-  hoverout(testLink)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned'
-])
-
-test('Longer hover + out + long hover', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  hoverout(testLink)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'dismissed'
-])
-
-test('Hover link + click', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(10),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Hover link + wait for hovercard + click', _ => [
-  visit(staging),
-  hover(testLink),
-  waitForHovercard,
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Quick hover link 1 + click link 2', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink2),
-  wait(10),
-  click(testLink2)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Hover link + out + hover back + click', _ => [
-  visit(staging),
-
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-// PROBLEMATIC: Fails if pauses are less than 400-500ms sometimes
-test('Hover link + out + hover back & wait + out + click', _ => [
-  visit(staging),
-
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'dismissed',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-// PROBLEMATIC: Fails if pauses are less than 500ms sometimes
-test('Multiple hover link 1 & 2 + click link 2', _ => [
-  visit(staging),
-
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink2),
-  waitForHovercard,
-  hoverout(testLink2),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink2),
-  wait(350),
-  hoverout(testLink2),
-
-  relax,
-
-  hover(testLink2),
-  click(testLink2)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'dismissed',
-  'dismissed',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('With hovercards disabled, clicking on a link tracks it', _ => [
-  visit(staging, {disabled: true}),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded',
-])
-
-test('With hovercards disabled, hovering & out + clicking on a link tracks it', _ => [
-  visit(staging, {disabled: true}),
-  hover(testLink),
-  wait(600),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded',
-])
-
-test('Hover link + click', _ => [
-  visit(staging),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Enabled: Hover link + click', _ => [
-  visit(staging),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Disabled: Hover link + click', _ => [
-  visit(staging, {disabled: true}),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Enabled: Hover link + click', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(150),
-  hoverout(testLink),
-  wait(150),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-// Bug found
-
-test('Disabled: Hover link + click', _ => [
-  visit(staging, {disabled: true}),
-  hover(testLink),
-  wait(150),
-  hoverout(testLink),
-  wait(150),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Disabled: Hover link + click', _ => [
-  visit(staging, {disabled: true}),
-  hover(testLink),
-  wait(150),
-  hoverout(testLink),
-  wait(150),
-  hover(testLink),
-  wait(150),
-  hoverout(testLink),
-  wait(150),
-  hover(testLink),
-  wait(150),
-  hoverout(testLink),
-  wait(150),
-  hover(testLink),
-  click(testLink)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-
-/* Clicking tests with clicking the hovercard */
-
-
-test('Hover link + wait for hovercard + click hovercard', _ => [
-  visit(staging),
-  hover(testLink),
-  waitForHovercard,
-  click(hovercard)
-], [
-  'pageLoaded',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Quick hover link 1 + hover link 2 + click hovercard', _ => [
-  visit(staging),
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink2),
-  waitForHovercard,
-  click(hovercard)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-test('Hover link + out + hover back + click hovercard', _ => [
-  visit(staging),
-
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  click(hovercard)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-
-// PROBLEMATIC: Fails if pauses are less than 400-500ms sometimes
-test('Hover link + out + hover back & wait + out + hover back & wait & click hovercard', _ => [
-  visit(staging),
-
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  click(hovercard)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'dismissed',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-// PROBLEMATIC: Fails if pauses are less than 500ms sometimes
-test('Multiple hover link 1 & 2 + hover 2 & click hovercard', _ => [
-  visit(staging),
-
-  hover(testLink),
-  wait(350),
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink2),
-  waitForHovercard,
-  hoverout(testLink2),
-
-  relax,
-
-  hover(testLink),
-  waitForHovercard,
-  hoverout(testLink),
-
-  relax,
-
-  hover(testLink2),
-  wait(350),
-  hoverout(testLink2),
-
-  relax,
-
-  hover(testLink2),
-  waitForHovercard,
-  click(hovercard)
-], [
-  'pageLoaded',
-  'dwelledButAbandoned',
-  'dismissed',
-  'dismissed',
-  'dwelledButAbandoned',
-  'opened in same tab',
-  'pageLoaded'
-])
-
-/*
-*/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function main () {
+
+  const staging = 'http://reading-web-staging.wmflabs.org/w/index.php?title=Main_Page&mobileaction=toggle_view_desktop'
+  const testLink = 'a[href="/wiki/Test"]'
+  const testLink2 = 'a[href="/wiki/Test2"]'
+  const hovercard = '.mwe-popups a.mwe-popups-extract, .mwe-popups a.mwe-popups-discreet'
+
+
+  /**/
+  test('Hover and wait for card', _ => [
+    visit(staging),
+    hover(testLink),
+    waitForHovercard,
+    hoverout(testLink)
+  ], [
+    'pageLoaded',
+    'dismissed'
+  ])
+
+  test('Quick/accidental hover', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(10),
+    hoverout(testLink)
+  ], ['pageLoaded'])
+
+  test('Longer quick/accidental hover', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(350),
+    hoverout(testLink)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned'
+  ])
+
+  test('Longer hover + out + long hover', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    hoverout(testLink)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'dismissed'
+  ])
+
+  test('Hover link + click', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(10),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Hover link + wait for hovercard + click', _ => [
+    visit(staging),
+    hover(testLink),
+    waitForHovercard,
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Quick hover link 1 + click link 2', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink2),
+    wait(10),
+    click(testLink2)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Hover link + out + hover back + click', _ => [
+    visit(staging),
+
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  // PROBLEMATIC: Fails if pauses are less than 400-500ms sometimes
+  test('Hover link + out + hover back & wait + out + click', _ => [
+    visit(staging),
+
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'dismissed',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  // PROBLEMATIC: Fails if pauses are less than 500ms sometimes
+  test('Multiple hover link 1 & 2 + click link 2', _ => [
+    visit(staging),
+
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink2),
+    waitForHovercard,
+    hoverout(testLink2),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink2),
+    wait(350),
+    hoverout(testLink2),
+
+    relax,
+
+    hover(testLink2),
+    click(testLink2)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'dismissed',
+    'dismissed',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('With hovercards disabled, clicking on a link tracks it', _ => [
+    visit(staging, {disabled: true}),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded',
+  ])
+
+  test('With hovercards disabled, hovering & out + clicking on a link tracks it', _ => [
+    visit(staging, {disabled: true}),
+    hover(testLink),
+    wait(600),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded',
+  ])
+
+  test('Hover link + click', _ => [
+    visit(staging),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Enabled: Hover link + click', _ => [
+    visit(staging),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Disabled: Hover link + click', _ => [
+    visit(staging, {disabled: true}),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Enabled: Hover link + click', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(150),
+    hoverout(testLink),
+    wait(150),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  // Bug found
+
+  test('Disabled: Hover link + click', _ => [
+    visit(staging, {disabled: true}),
+    hover(testLink),
+    wait(150),
+    hoverout(testLink),
+    wait(150),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Disabled: Hover link + click', _ => [
+    visit(staging, {disabled: true}),
+    hover(testLink),
+    wait(150),
+    hoverout(testLink),
+    wait(150),
+    hover(testLink),
+    wait(150),
+    hoverout(testLink),
+    wait(150),
+    hover(testLink),
+    wait(150),
+    hoverout(testLink),
+    wait(150),
+    hover(testLink),
+    click(testLink)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+
+  /* Clicking tests with clicking the hovercard */
+
+
+  test('Hover link + wait for hovercard + click hovercard', _ => [
+    visit(staging),
+    hover(testLink),
+    waitForHovercard,
+    click(hovercard)
+  ], [
+    'pageLoaded',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Quick hover link 1 + hover link 2 + click hovercard', _ => [
+    visit(staging),
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink2),
+    waitForHovercard,
+    click(hovercard)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  test('Hover link + out + hover back + click hovercard', _ => [
+    visit(staging),
+
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    click(hovercard)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+
+  // PROBLEMATIC: Fails if pauses are less than 400-500ms sometimes
+  test('Hover link + out + hover back & wait + out + hover back & wait & click hovercard', _ => [
+    visit(staging),
+
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    click(hovercard)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'dismissed',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  // PROBLEMATIC: Fails if pauses are less than 500ms sometimes
+  test('Multiple hover link 1 & 2 + hover 2 & click hovercard', _ => [
+    visit(staging),
+
+    hover(testLink),
+    wait(350),
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink2),
+    waitForHovercard,
+    hoverout(testLink2),
+
+    relax,
+
+    hover(testLink),
+    waitForHovercard,
+    hoverout(testLink),
+
+    relax,
+
+    hover(testLink2),
+    wait(350),
+    hoverout(testLink2),
+
+    relax,
+
+    hover(testLink2),
+    waitForHovercard,
+    click(hovercard)
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned',
+    'dismissed',
+    'dismissed',
+    'dwelledButAbandoned',
+    'opened in same tab',
+    'pageLoaded'
+  ])
+
+  /*
+  */
+}
+
+function setup ({initFromStorage, disabled}) {
+  return (n) => 
+    n.evaluate((initFromStorage, disabled) => {
+      (function tilReady () {
+        if (window.mw.loader.getState('ext.popups.core') === 'ready') {
+          window.mw.popups.saveEnabledState( !disabled )
+          window.mw.popups.getEnabledState = function () { return !disabled }
+          window.mw.popups.enabled = !disabled
+          window.log = initFromStorage ? (JSON.parse(localStorage.getItem('log')) || []) : []
+          window.mw.trackSubscribe('event', (schema, e) => {
+            window.log.push([e.action, JSON.stringify(e)])
+            localStorage.setItem('log', JSON.stringify(window.log))
+          })
+        } else {
+          setTimeout(tilReady, 10)
+        }
+      })()
+    }, initFromStorage, disabled)
+}
+function hover (link) { return (n) => n.mouseover(link) }
+function hoverout (link) { return (n) => n.evaluate(mouseout, link) }
+function click (link) { return (n) => setup({initFromStorage: true})(n.click(link)) }
+function waitForHovercard (n) {
+  return n.wait('.mwe-popups').wait(() =>
+    document.querySelector('.mwe-popups').style.display === 'block')
+}
+function visit (url, opts) { return (n) => setup(opts || {})(n.goto(url)) }
+function wait (t) { return (n) => n.wait(t || 10) }
+function relax (n) { return wait(500)(n) }
 
 function mouseout(selector) {
   var element = document.querySelector(selector)
@@ -465,6 +449,8 @@ function mouseout(selector) {
   event.initMouseEvent('mouseout', true, true)
   element.dispatchEvent(event)
 }
+
+const Nightmare = require('nightmare');
 
 function newBrowser () {
   return Nightmare({ show: false })
@@ -511,3 +497,5 @@ function test (name, steps, expected) {
       .catch((error) => console.error('Test failed:', error))
   )
 }
+
+main()
