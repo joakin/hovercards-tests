@@ -481,8 +481,8 @@ function test (name, steps, expected) {
         console.log(`### Steps\n`)
         console.log(
           (tmp = steps.toString().split('\n'))
-            .filter(l => !!l.trim() && l !== '_ => [' && l !== ']')
-            .map(l => l.replace(/^  /g, '1. ').replace(/,$/g, ''))
+            .filter(l => !!l.trim() && l.trim() !== '_ => [' && l.trim() !== ']')
+            .map(l => l.trim().replace(/^/g, '1. ').replace(/,$/g, ''))
             .join('\n')
         )
         console.log(`\n### Results\n`)
