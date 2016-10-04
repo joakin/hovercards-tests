@@ -23,7 +23,10 @@ function main () {
     hover(testLink),
     wait(10),
     hoverout(testLink)
-  ], ['pageLoaded'])
+  ], [
+    'pageLoaded',
+    'dwelledButAbandoned'
+  ])
 
   test('Longer quick/accidental hover', _ => [
     visit(staging),
@@ -74,7 +77,7 @@ function main () {
     'pageLoaded'
   ])
 
-  test('Quick hover link 1 + click link 2', _ => [
+  test('Hover link 1 + click link 2', _ => [
     visit(staging),
     hover(testLink),
     wait(350),
@@ -233,7 +236,7 @@ function main () {
     'pageLoaded'
   ])
 
-  test('Enabled: Hover link + click', _ => [
+  test('Enabled: Hover link + out + click', _ => [
     visit(staging),
     hover(testLink),
     wait(150),
@@ -243,13 +246,13 @@ function main () {
     click(testLink)
   ], [
     'pageLoaded',
+    'dwelledButAbandoned',
     'opened in same tab',
     'pageLoaded'
   ])
 
   // Bug found
-
-  test('Disabled: Hover link + click', _ => [
+  test('Disabled: Hover link + out + click', _ => [
     visit(staging, {disabled: true}),
     hover(testLink),
     wait(150),
@@ -259,28 +262,36 @@ function main () {
     click(testLink)
   ], [
     'pageLoaded',
+    'dwelledButAbandoned',
     'opened in same tab',
     'pageLoaded'
   ])
 
-  test('Disabled: Hover link + click', _ => [
+  test('Disabled: (Hover link + out)*3 + click', _ => [
     visit(staging, {disabled: true}),
+
     hover(testLink),
     wait(150),
     hoverout(testLink),
     wait(150),
+
     hover(testLink),
     wait(150),
     hoverout(testLink),
     wait(150),
+
     hover(testLink),
     wait(150),
     hoverout(testLink),
     wait(150),
+
     hover(testLink),
     click(testLink)
   ], [
     'pageLoaded',
+    'dwelledButAbandoned',
+    'dwelledButAbandoned',
+    'dwelledButAbandoned',
     'opened in same tab',
     'pageLoaded'
   ])
