@@ -424,16 +424,16 @@ function main () {
 function setup ({initFromStorage, disabled}) {
   return (n) => 
     n.evaluate((initFromStorage, disabled) => {
+      window.log = initFromStorage ? (JSON.parse(localStorage.getItem('log')) || []) : []
+      window.mw.trackSubscribe('event', (schema, e) => {
+        window.log.push([e.action, JSON.stringify(e)])
+        localStorage.setItem('log', JSON.stringify(window.log))
+      });
       (function tilReady () {
         if (window.mw.loader.getState('ext.popups.core') === 'ready') {
           window.mw.popups.saveEnabledState( !disabled )
           window.mw.popups.getEnabledState = function () { return !disabled }
           window.mw.popups.enabled = !disabled
-          window.log = initFromStorage ? (JSON.parse(localStorage.getItem('log')) || []) : []
-          window.mw.trackSubscribe('event', (schema, e) => {
-            window.log.push([e.action, JSON.stringify(e)])
-            localStorage.setItem('log', JSON.stringify(window.log))
-          })
         } else {
           setTimeout(tilReady, 10)
         }
