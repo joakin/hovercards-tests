@@ -1,12 +1,12 @@
 
 function main () {
 
-  const staging = 'http://reading-web-staging.wmflabs.org/w/index.php?title=Main_Page&mobileaction=toggle_view_desktop'
-  const testLink = 'a[href="/wiki/Test"]'
-  const testLink2 = 'a[href="/wiki/Test2"]'
+  const staging = process.env.TEST_URL || 'http://reading-web-staging.wmflabs.org/w/index.php?title=Main_Page&mobileaction=toggle_view_desktop'
+  const testLink = 'a[href="/wiki/Test"],a[href="/w/index.php/Test"]'
+  const testLink2 = 'a[href="/wiki/Test2"],a[href="/w/index.php/Test2"]'
   const hovercard = '.mwe-popups a.mwe-popups-extract, .mwe-popups a.mwe-popups-discreet'
 
-
+  console.log('Running for', staging );
   /**/
   test('Hover and wait for card', _ => [
     visit(staging),
