@@ -7,6 +7,7 @@ https://gist.github.com/joakin/3f876fc007758bd8c8f7e5e8bbae84ff
 
 ```
 npm install
+export WAIT_TIME=3000
 export TEST_URL=http://localhost:8888/w/index.php/Test_hovercards
 node index.js
 ```

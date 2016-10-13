@@ -1,15 +1,17 @@
 
 function main () {
 
+  const PAGE_LOAD_WAIT_TIME = process.env.WAIT_TIME ? parseInt( process.env.WAIT_TIME, 10 ) : 0
   const staging = process.env.TEST_URL || 'http://reading-web-staging.wmflabs.org/w/index.php?title=Main_Page&mobileaction=toggle_view_desktop'
   const testLink = 'a[href="/wiki/Test"],a[href="/w/index.php/Test"]'
   const testLink2 = 'a[href="/wiki/Test2"],a[href="/w/index.php/Test2"]'
   const hovercard = '.mwe-popups a.mwe-popups-extract, .mwe-popups a.mwe-popups-discreet'
 
-  console.log('Running for', staging );
+  console.log('Running for', staging, '(Wait time=' + PAGE_LOAD_WAIT_TIME + ')' );
   /**/
   test('Hover and wait for card', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     waitForHovercard,
     hoverout(testLink)
@@ -20,6 +22,7 @@ function main () {
 
   test('Quick/accidental hover', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(10),
     hoverout(testLink)
@@ -30,6 +33,7 @@ function main () {
 
   test('Longer quick/accidental hover', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(350),
     hoverout(testLink)
@@ -40,6 +44,7 @@ function main () {
 
   test('Longer hover + out + long hover', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(350),
     hoverout(testLink),
@@ -57,6 +62,7 @@ function main () {
 
   test('Hover link + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(10),
     click(testLink)
@@ -68,6 +74,7 @@ function main () {
 
   test('Hover link + wait for hovercard + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     waitForHovercard,
     click(testLink)
@@ -79,6 +86,7 @@ function main () {
 
   test('Hover link 1 + click link 2', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(350),
     hoverout(testLink),
@@ -97,6 +105,7 @@ function main () {
 
   test('Hover link + out + hover back + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(350),
@@ -116,6 +125,7 @@ function main () {
   // PROBLEMATIC: Fails if pauses are less than 400-500ms sometimes
   test('Hover link + out + hover back & wait + out + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(350),
@@ -142,6 +152,7 @@ function main () {
   // PROBLEMATIC: Fails if pauses are less than 500ms sometimes
   test('Multiple hover link 1 & 2 + click link 2', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(350),
@@ -181,6 +192,7 @@ function main () {
 
   test('With hovercards disabled, clicking on a link tracks it', _ => [
     visit(staging, {disabled: true}),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     click(testLink)
   ], [
@@ -191,6 +203,7 @@ function main () {
 
   test('With hovercards disabled, hovering & out + clicking on a link tracks it', _ => [
     visit(staging, {disabled: true}),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(600),
     hoverout(testLink),
@@ -208,6 +221,7 @@ function main () {
 
   test('Hover link + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     click(testLink)
   ], [
@@ -218,6 +232,7 @@ function main () {
 
   test('Enabled: Hover link + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     click(testLink)
   ], [
@@ -228,6 +243,7 @@ function main () {
 
   test('Disabled: Hover link + click', _ => [
     visit(staging, {disabled: true}),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     click(testLink)
   ], [
@@ -238,6 +254,7 @@ function main () {
 
   test('Enabled: Hover link + out + click', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(150),
     hoverout(testLink),
@@ -254,6 +271,7 @@ function main () {
   // Bug found
   test('Disabled: Hover link + out + click', _ => [
     visit(staging, {disabled: true}),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(150),
     hoverout(testLink),
@@ -269,6 +287,7 @@ function main () {
 
   test('Disabled: (Hover link + out)*3 + click', _ => [
     visit(staging, {disabled: true}),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(150),
@@ -302,6 +321,7 @@ function main () {
 
   test('Hover link + wait for hovercard + click hovercard', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     waitForHovercard,
     click(hovercard)
@@ -313,6 +333,7 @@ function main () {
 
   test('Quick hover link 1 + hover link 2 + click hovercard', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
     hover(testLink),
     wait(350),
     hoverout(testLink),
@@ -331,6 +352,7 @@ function main () {
 
   test('Hover link + out + hover back + click hovercard', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(350),
@@ -352,6 +374,7 @@ function main () {
   // PROBLEMATIC: Fails if pauses are less than 400-500ms sometimes
   test('Hover link + out + hover back & wait + out + hover back & wait & click hovercard', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(350),
@@ -379,6 +402,7 @@ function main () {
   // PROBLEMATIC: Fails if pauses are less than 500ms sometimes
   test('Multiple hover link 1 & 2 + hover 2 & click hovercard', _ => [
     visit(staging),
+    wait(PAGE_LOAD_WAIT_TIME),
 
     hover(testLink),
     wait(350),
